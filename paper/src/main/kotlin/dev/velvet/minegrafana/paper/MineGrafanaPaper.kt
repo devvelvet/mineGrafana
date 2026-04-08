@@ -1,6 +1,7 @@
 package dev.velvet.minegrafana.paper
 
 import dev.velvet.minegrafana.monitoring.application.service.MonitoringApplicationService
+import org.bukkit.Bukkit
 import dev.velvet.minegrafana.monitoring.infrastructure.adapter.MinecraftMeterBinder
 import dev.velvet.minegrafana.monitoring.infrastructure.grafana.GrafanaProvisioner
 import dev.velvet.minegrafana.paper.adapter.PaperMetricsProvider
@@ -39,6 +40,7 @@ class MineGrafanaPaper : JavaPlugin() {
     }
 
     override fun onDisable() {
+        threadProfiler.shutdown()
         server.scheduler.cancelTasks(this)
         springBridge?.stop()
         logger.info("mineGrafana disabled.")
@@ -81,9 +83,9 @@ class MineGrafanaPaper : JavaPlugin() {
     }
 
     private fun registerListeners() {
-        threadProfiler.init()
+        // Don't init threadProfiler here — plugins aren't all loaded yet
         server.pluginManager.registerEvents(
-            TickEventListener(msptProvider, threadProfiler, tickDistribution), this
+            TickEventListener(msptProvider, tickDistribution), this
         )
     }
 
@@ -94,6 +96,14 @@ class MineGrafanaPaper : JavaPlugin() {
                 return@Runnable
             }
             logger.info("Spring Boot is ready. Initializing services...")
+
+            // Init thread profiler here — all plugins are loaded by this point
+            threadProfiler.init()
+            val registered = threadProfiler.getRegisteredPlugins()
+            logger.info("Thread profiler: ${registered.values.toSet().size} plugins, ${registered.size} package prefixes")
+            registered.entries.groupBy { it.value }.forEach { (plugin, prefixes) ->
+                logger.info("  $plugin -> ${prefixes.map { it.key }}")
+            }
 
             wireMonitoring()
             wireGrafana()

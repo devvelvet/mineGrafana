@@ -111,7 +111,8 @@
       "id": 10, "title": "Plugin CPU Usage (%)", "type": "bargauge",
       "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
       "datasource": { "type": "prometheus" },
-      "targets": [{ "expr": "minecraft_plugin_cpu_percent{server=~\"$server\"}", "legendFormat": "{{plugin}}" }],
+      "targets": [{ "expr": "topk(15, minecraft_plugin_cpu_percent{server=~\"$server\"})", "legendFormat": "{{plugin}}" }],
+      "options": { "orientation": "horizontal", "displayMode": "gradient", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [
         { "value": null, "color": "green" }, { "value": 10, "color": "yellow" }, { "value": 30, "color": "red" }
       ]}}}
