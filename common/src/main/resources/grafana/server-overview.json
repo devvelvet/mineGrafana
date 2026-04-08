@@ -1,0 +1,198 @@
+{
+  "id": null,
+  "uid": "minegrafana-overview",
+  "title": "mineGrafana - Server Overview",
+  "tags": ["minecraft", "minegrafana"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "time": { "from": "now-30m", "to": "now" },
+  "templating": {
+    "list": [{
+      "name": "server",
+      "type": "query",
+      "query": "label_values(minecraft_tps_current, server)",
+      "multi": true,
+      "includeAll": true,
+      "current": { "text": "All", "value": "$__all" }
+    }]
+  },
+  "panels": [
+    {
+      "id": 1, "title": "TPS", "type": "gauge",
+      "gridPos": { "h": 8, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_tps_current{server=~\"$server\"}", "legendFormat": "{{server}}" }],
+      "fieldConfig": { "defaults": { "min": 0, "max": 20, "thresholds": { "mode": "absolute", "steps": [
+        { "value": null, "color": "red" }, { "value": 15, "color": "yellow" }, { "value": 18, "color": "green" }
+      ]}}}
+    },
+    {
+      "id": 2, "title": "MSPT (avg / p95)", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 10, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_mspt_avg{server=~\"$server\"}", "legendFormat": "{{server}} avg" },
+        { "expr": "minecraft_mspt_p95{server=~\"$server\"}", "legendFormat": "{{server}} p95" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "fillOpacity": 10 } } }
+    },
+    {
+      "id": 3, "title": "Players", "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_players_online{server=~\"$server\"}", "legendFormat": "{{server}}" }]
+    },
+    {
+      "id": 4, "title": "Health", "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_health_grade{server=~\"$server\"}", "legendFormat": "{{server}}" }],
+      "fieldConfig": { "defaults": { "mappings": [
+        { "type": "value", "options": { "0": { "text": "GOOD", "color": "green" }}},
+        { "type": "value", "options": { "1": { "text": "WARNING", "color": "yellow" }}},
+        { "type": "value", "options": { "2": { "text": "CRITICAL", "color": "red" }}}
+      ]}}
+    },
+    {
+      "id": 5, "title": "Entities", "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 4 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_entities{server=~\"$server\"}", "legendFormat": "{{server}}" }]
+    },
+    {
+      "id": 6, "title": "Chunks", "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 4 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_chunks_loaded{server=~\"$server\"}", "legendFormat": "{{server}}" }]
+    },
+    {
+      "id": 7, "title": "CPU Usage", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_cpu_process{server=~\"$server\"}", "legendFormat": "{{server}} process" },
+        { "expr": "minecraft_cpu_system{server=~\"$server\"}", "legendFormat": "{{server}} system" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "fillOpacity": 15 } } }
+    },
+    {
+      "id": 8, "title": "Memory (MB)", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_memory_used_mb{server=~\"$server\"}", "legendFormat": "{{server}} used" },
+        { "expr": "minecraft_memory_max_mb{server=~\"$server\"}", "legendFormat": "{{server}} max" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "fillOpacity": 20 } } }
+    },
+    {
+      "id": 9, "title": "Tick Distribution", "type": "piechart",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_tick_under5ms{server=~\"$server\"}", "legendFormat": "<5ms" },
+        { "expr": "minecraft_tick_under10ms{server=~\"$server\"}", "legendFormat": "5-10ms" },
+        { "expr": "minecraft_tick_under25ms{server=~\"$server\"}", "legendFormat": "10-25ms" },
+        { "expr": "minecraft_tick_under50ms{server=~\"$server\"}", "legendFormat": "25-50ms" },
+        { "expr": "minecraft_tick_over50ms{server=~\"$server\"}", "legendFormat": ">50ms (skip)" }
+      ],
+      "fieldConfig": { "defaults": { "custom": {} }, "overrides": [
+        { "matcher": { "id": "byName", "options": "<5ms" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" }}]},
+        { "matcher": { "id": "byName", "options": "5-10ms" }, "properties": [{ "id": "color", "value": { "fixedColor": "light-green", "mode": "fixed" }}]},
+        { "matcher": { "id": "byName", "options": "10-25ms" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" }}]},
+        { "matcher": { "id": "byName", "options": "25-50ms" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" }}]},
+        { "matcher": { "id": "byName", "options": ">50ms (skip)" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" }}]}
+      ]}
+    },
+    {
+      "id": 10, "title": "Plugin CPU Usage (%)", "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 16 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_plugin_cpu_percent{server=~\"$server\"}", "legendFormat": "{{plugin}}" }],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "thresholds": { "mode": "absolute", "steps": [
+        { "value": null, "color": "green" }, { "value": 10, "color": "yellow" }, { "value": 30, "color": "red" }
+      ]}}}
+    },
+    {
+      "id": 11, "title": "Thread Activity", "type": "bargauge",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 16 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_thread_samples{server=~\"$server\"}", "legendFormat": "{{thread}}" }],
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [
+        { "value": null, "color": "blue" }
+      ]}}}
+    },
+    {
+      "id": 12, "title": "TPS History", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_tps_current{server=~\"$server\"}", "legendFormat": "{{server}} current" },
+        { "expr": "minecraft_tps_avg1m{server=~\"$server\"}", "legendFormat": "{{server}} 1m" }
+      ],
+      "fieldConfig": { "defaults": { "min": 0, "max": 20, "custom": { "fillOpacity": 10 } } }
+    },
+    {
+      "id": 13, "title": "World Entities", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 24 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "minecraft_world_entities{server=~\"$server\"}", "legendFormat": "{{world}}" }]
+    },
+    {
+      "id": 14, "title": "Player Ping", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 24 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_player_ping{server=~\"$server\"}", "legendFormat": "{{player}}" },
+        { "expr": "minecraft_players_ping_avg{server=~\"$server\"}", "legendFormat": "avg" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms" } }
+    },
+    {
+      "id": 15, "title": "Redstone / Hoppers / Pistons", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 32 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_redstone_active{server=~\"$server\"}", "legendFormat": "Redstone" },
+        { "expr": "minecraft_hoppers{server=~\"$server\"}", "legendFormat": "Hoppers" },
+        { "expr": "minecraft_pistons{server=~\"$server\"}", "legendFormat": "Pistons" }
+      ]
+    },
+    {
+      "id": 16, "title": "Disk Usage", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 32 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_disk_used_mb{server=~\"$server\"}", "legendFormat": "Used" },
+        { "expr": "minecraft_disk_free_mb{server=~\"$server\"}", "legendFormat": "Free" },
+        { "expr": "minecraft_world_size_mb{server=~\"$server\"}", "legendFormat": "World Size" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+    },
+    {
+      "id": 17, "title": "Plugin Hot Classes (Top)", "type": "table",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 32 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "topk(15, minecraft_plugin_hotclass_samples{server=~\"$server\"})", "legendFormat": "{{plugin}} - {{class}}", "format": "table", "instant": true }],
+      "transformations": [{ "id": "sortBy", "options": { "fields": {}, "sort": [{ "field": "Value", "desc": true }] } }]
+    },
+    {
+      "id": 18, "title": "Tile Entities", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "minecraft_tile_entities{server=~\"$server\"}", "legendFormat": "Total" },
+        { "expr": "minecraft_world_tile_entities{server=~\"$server\"}", "legendFormat": "{{world}}" }
+      ]
+    },
+    {
+      "id": 19, "title": "Entity Types (Top 10)", "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "topk(10, minecraft_entity_type_count{server=~\"$server\"})", "legendFormat": "{{world}} {{type}}" }]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "id": null,
+  "uid": "minegrafana-velocity",
+  "title": "mineGrafana - Velocity Proxy",
+  "tags": ["minecraft", "minegrafana", "velocity"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "5s",
+  "schemaVersion": 39,
+  "time": { "from": "now-30m", "to": "now" },
+  "panels": [
+    {
+      "id": 1, "title": "Total Players", "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "velocity_players_total", "legendFormat": "Players" }],
+      "fieldConfig": { "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "steps": [
+        { "value": null, "color": "blue" }, { "value": 50, "color": "green" }, { "value": 100, "color": "yellow" }
+      ]}}}
+    },
+    {
+      "id": 2, "title": "Backend Servers", "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "velocity_servers_registered", "legendFormat": "Servers" }]
+    },
+    {
+      "id": 3, "title": "Avg Player Ping", "type": "gauge",
+      "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "velocity_players_ping_avg", "legendFormat": "Avg Ping" }],
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0, "max": 500, "thresholds": { "mode": "absolute", "steps": [
+        { "value": null, "color": "green" }, { "value": 100, "color": "yellow" }, { "value": 200, "color": "red" }
+      ]}}}
+    },
+    {
+      "id": 4, "title": "Proxy Memory", "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "velocity_memory_used_mb", "legendFormat": "Used MB" }],
+      "fieldConfig": { "defaults": { "unit": "decmbytes" } }
+    },
+    {
+      "id": 5, "title": "Players per Server", "type": "bargauge",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "velocity_server_players", "legendFormat": "{{server}}" }],
+      "fieldConfig": { "defaults": { "thresholds": { "mode": "absolute", "steps": [
+        { "value": null, "color": "blue" }, { "value": 20, "color": "green" }, { "value": 50, "color": "yellow" }
+      ]}}}
+    },
+    {
+      "id": 6, "title": "Server Status", "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "datasource": { "type": "prometheus" },
+      "targets": [{ "expr": "velocity_server_online", "legendFormat": "{{server}}" }],
+      "fieldConfig": { "defaults": { "mappings": [
+        { "type": "value", "options": { "0": { "text": "OFFLINE", "color": "red" }}},
+        { "type": "value", "options": { "1": { "text": "ONLINE", "color": "green" }}}
+      ]}}
+    },
+    {
+      "id": 7, "title": "Total Players (History)", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "velocity_players_total", "legendFormat": "Total" },
+        { "expr": "velocity_server_players", "legendFormat": "{{server}}" }
+      ],
+      "fieldConfig": { "defaults": { "custom": { "fillOpacity": 15 } } }
+    },
+    {
+      "id": 8, "title": "Player Ping", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "velocity_player_ping", "legendFormat": "{{player}}" },
+        { "expr": "velocity_players_ping_avg", "legendFormat": "Average" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "ms", "custom": { "fillOpacity": 5 } } }
+    },
+    {
+      "id": 9, "title": "Proxy CPU", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "velocity_cpu_process", "legendFormat": "Process" },
+        { "expr": "velocity_cpu_system", "legendFormat": "System" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100, "custom": { "fillOpacity": 15 } } }
+    },
+    {
+      "id": 10, "title": "Proxy Memory", "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "datasource": { "type": "prometheus" },
+      "targets": [
+        { "expr": "velocity_memory_used_mb", "legendFormat": "Used" },
+        { "expr": "velocity_memory_max_mb", "legendFormat": "Max" }
+      ],
+      "fieldConfig": { "defaults": { "unit": "decmbytes", "custom": { "fillOpacity": 20 } } }
+    }
+  ]
+}

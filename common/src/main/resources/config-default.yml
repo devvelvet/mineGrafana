@@ -1,0 +1,73 @@
+# ─────────────────────────────────────────────
+# mineGrafana Configuration
+# ─────────────────────────────────────────────
+
+# Unique server ID (used as Prometheus label to distinguish multiple servers)
+server-id: "survival-1"
+
+# Server type: "paper" or "velocity"
+server-type: "paper"
+
+# ─── Web Server ───
+web:
+  # Port for /metrics endpoint
+  # Paper and Velocity must use different ports (e.g. Paper: 9100, Velocity: 9200)
+  port: 9100
+
+  # Bind address ("0.0.0.0" = all interfaces)
+  bind-address: "0.0.0.0"
+
+# ─── Monitoring Features ───
+features:
+  monitoring:
+    # Enable/disable monitoring
+    enabled: true
+
+    # Metrics collection interval (seconds)
+    # Recommended: Paper = 1s, Velocity = 5s
+    collection-interval-seconds: 1
+
+    # Entity/chunk collection interval (seconds, Paper only)
+    # Entity scanning can be heavy — use a longer interval
+    entity-collection-interval-seconds: 5
+
+    # Enable JFR/async-profiler
+    # Use /mg profile start in-game. Set to false on Velocity.
+    profiler-enabled: true
+
+# ─── Metrics Export ───
+metrics:
+  # Prometheus (Pull — Prometheus scrapes /metrics)
+  prometheus:
+    enabled: true
+    endpoint: "/metrics"
+
+  # InfluxDB (Push — plugin pushes metrics periodically)
+  influx:
+    enabled: false
+    url: "http://localhost:8086"
+    org: "minecraft"
+    bucket: "minegrafana"
+    token: ""
+    # Push interval (seconds)
+    step-seconds: 10
+
+# ─── Grafana Auto-Provisioning ───
+# Automatically creates datasource + dashboard via Grafana API on startup
+grafana:
+  # Enable auto-provisioning
+  auto-provision: false
+
+  # Grafana URL
+  url: "http://localhost:3000"
+
+  # Grafana API key (Administration > Service Accounts > Add Token)
+  api-key: ""
+
+  # Datasource name to create
+  datasource-name: "mineGrafana-prometheus"
+
+  # Prometheus URL (used by Grafana to connect to Prometheus)
+  # Docker: "http://prometheus:9090"
+  # Local: "http://localhost:9090"
+  prometheus-url: "http://localhost:9090"

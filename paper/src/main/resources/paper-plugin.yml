@@ -1,0 +1,41 @@
+name: mineGrafana
+version: 1.0.0
+main: dev.velvet.minegrafana.paper.MineGrafanaPaper
+bootstrapper: dev.velvet.minegrafana.paper.MineGrafanaBootstrap
+loader: dev.velvet.minegrafana.paper.MineGrafanaLoader
+api-version: "1.21"
+load: POSTWORLD
+description: "Server performance monitoring with Grafana metrics integration"
+authors:
+  - velvet
+commands:
+  mg:
+    description: "mineGrafana main command"
+    aliases:
+      - minegrafana
+    usage: "/mg <subcommand>"
+permissions:
+  minegrafana.admin:
+    description: "All mineGrafana permissions"
+    default: op
+    children:
+      minegrafana.command.monitor: true
+      minegrafana.command.profile: true
+      minegrafana.command.reload: true
+      minegrafana.command.status: true
+      minegrafana.notify.alert: true
+  minegrafana.command.monitor:
+    description: "View server health report"
+    default: op
+  minegrafana.command.profile:
+    description: "Use the profiler"
+    default: op
+  minegrafana.command.reload:
+    description: "Reload plugin configuration"
+    default: op
+  minegrafana.command.status:
+    description: "View plugin status"
+    default: op
+  minegrafana.notify.alert:
+    description: "Receive performance alert notifications"
+    default: op
