@@ -98,7 +98,11 @@ class MineGrafanaPaper : JavaPlugin() {
 
             wireMonitoring()
             wireGrafana()
-            wireProfilerAndCommands()
+
+            // Commands must be registered on the main thread
+            server.scheduler.runTask(this@MineGrafanaPaper, Runnable {
+                wireProfilerAndCommands()
+            })
         }, 20L)
     }
 
