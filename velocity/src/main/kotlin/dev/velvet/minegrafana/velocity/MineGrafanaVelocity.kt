@@ -7,14 +7,11 @@ import com.velocitypowered.api.event.proxy.ProxyShutdownEvent
 import com.velocitypowered.api.plugin.Plugin
 import com.velocitypowered.api.plugin.annotation.DataDirectory
 import com.velocitypowered.api.proxy.ProxyServer
-import dev.velvet.minegrafana.monitoring.application.service.MonitoringApplicationService
-import dev.velvet.minegrafana.shared.config.ConfigLoader
-import dev.velvet.minegrafana.shared.config.PluginConfig
-import dev.velvet.minegrafana.shared.model.ServerId
-import dev.velvet.minegrafana.velocity.metrics.VelocityMeterBinder
-import dev.velvet.minegrafana.velocity.metrics.VelocityMetricsProvider
-import dev.velvet.minegrafana.velocity.spring.VelocitySpringBridge
+import dev.velvet.minegrafana.config.ConfigLoader
+import dev.velvet.minegrafana.config.PluginConfig
+import dev.velvet.minegrafana.grafana.GrafanaProvisioner
 import org.slf4j.Logger
+import java.lang.management.ManagementFactory
 import java.nio.file.Path
 import java.time.Duration
 
@@ -61,48 +58,27 @@ class MineGrafanaVelocity @Inject constructor(
             }
             logger.info("Spring Boot is ready. Initializing Velocity metrics...")
 
-            val metricsProvider = VelocityMetricsProvider(server)
-
-            // Wire monitoring service
-            val monitoringService = springBridge!!.getBean(MonitoringApplicationService::class.java)
-            if (monitoringService != null) {
-                monitoringService.metricsProvider = metricsProvider
-                val serverId = ServerId(pluginConfig.serverId)
-                val interval = pluginConfig.features.monitoring.collectionIntervalSeconds.toLong()
-
-                server.scheduler.buildTask(this@MineGrafanaVelocity, Runnable {
-                    monitoringService.collectAndPublish(serverId)
-                }).repeat(Duration.ofSeconds(interval)).schedule()
-
-                logger.info("Monitoring initialized. Interval: ${interval}s")
-            }
-
-            // Wire Velocity-specific meter binder
             val meterBinder = springBridge!!.getBean(VelocityMeterBinder::class.java)
             if (meterBinder != null) {
-                meterBinder.metricsProvider = metricsProvider
+                meterBinder.proxyServer = server
 
-                // Periodic dynamic gauge registration
+                // Periodic cache update + dynamic gauge registration
                 server.scheduler.buildTask(this@MineGrafanaVelocity, Runnable {
+                    updateCache(meterBinder)
                     meterBinder.registerDynamicGauges()
-                }).repeat(Duration.ofSeconds(5)).schedule()
+                }).repeat(Duration.ofSeconds(pluginConfig.features.monitoring.collectionIntervalSeconds.toLong())).schedule()
 
-                logger.info("Velocity meter binder initialized.")
+                logger.info("Monitoring initialized. Interval: ${pluginConfig.features.monitoring.collectionIntervalSeconds}s")
             }
 
-            // Grafana auto-provision
             if (pluginConfig.grafana.autoProvision) {
-                val provisioner = springBridge!!.getBean(
-                    dev.velvet.minegrafana.monitoring.infrastructure.grafana.GrafanaProvisioner::class.java
+                springBridge!!.getBean(GrafanaProvisioner::class.java)?.provision(
+                    pluginConfig.grafana, "http://localhost:${pluginConfig.web.port}/metrics", "velocity"
                 )
-                provisioner?.provision(pluginConfig.grafana, "http://localhost:${pluginConfig.web.port}/metrics", "velocity")
             }
         }
 
-        server.scheduler.buildTask(this, initTask)
-            .delay(Duration.ofSeconds(1))
-            .schedule()
-
+        server.scheduler.buildTask(this, initTask).delay(Duration.ofSeconds(1)).schedule()
         logger.info("mineGrafana Velocity v1.0.0 enabled!")
     }
 
@@ -110,5 +86,21 @@ class MineGrafanaVelocity @Inject constructor(
     fun onProxyShutdown(event: ProxyShutdownEvent) {
         springBridge?.stop()
         logger.info("mineGrafana Velocity disabled.")
+    }
+
+    private fun updateCache(m: VelocityMeterBinder) {
+        m.totalPlayers = server.playerCount
+        m.serverCount = server.allServers.size
+        m.pingAvg = server.allPlayers.let { if (it.isEmpty()) 0.0 else it.map { p -> p.ping.toInt() }.average() }
+
+        val os = ManagementFactory.getOperatingSystemMXBean()
+        if (os is com.sun.management.OperatingSystemMXBean) {
+            m.cpuProcess = Math.round(os.processCpuLoad * 10000.0) / 100.0
+            m.cpuSystem = Math.round(os.cpuLoad * 10000.0) / 100.0
+        }
+        val heap = ManagementFactory.getMemoryMXBean().heapMemoryUsage
+        m.memUsedMb = heap.used / (1024 * 1024)
+        m.memMaxMb = heap.max / (1024 * 1024)
+        m.memFreePercent = if (m.memMaxMb > 0) Math.round((m.memMaxMb - m.memUsedMb).toDouble() / m.memMaxMb * 10000.0) / 100.0 else 100.0
     }
 }

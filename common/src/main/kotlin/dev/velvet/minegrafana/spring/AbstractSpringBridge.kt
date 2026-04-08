@@ -1,6 +1,6 @@
 package dev.velvet.minegrafana.spring
 
-import dev.velvet.minegrafana.shared.config.PluginConfig
+import dev.velvet.minegrafana.config.PluginConfig
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.WebApplicationType
