@@ -1,7 +1,6 @@
 package dev.velvet.minegrafana.paper
 
 import dev.velvet.minegrafana.monitoring.application.service.MonitoringApplicationService
-import dev.velvet.minegrafana.monitoring.application.service.ProfilerApplicationService
 import dev.velvet.minegrafana.monitoring.infrastructure.adapter.MinecraftMeterBinder
 import dev.velvet.minegrafana.monitoring.infrastructure.grafana.GrafanaProvisioner
 import dev.velvet.minegrafana.paper.adapter.PaperMetricsProvider
@@ -136,29 +135,19 @@ class MineGrafanaPaper : JavaPlugin() {
     }
 
     private fun wireProfilerAndCommands() {
-        val monitoringService = springBridge!!.getBean(MonitoringApplicationService::class.java)
-        val profilerService = springBridge!!.getBean(ProfilerApplicationService::class.java)
+        val handler = MineGrafanaCommand(this)
 
-        if (profilerService != null) {
-            logger.info("Profiler initialized. Engine: ${profilerService.getEngineName()}")
-        }
-
-        if (monitoringService != null) {
-            val handler = MineGrafanaCommand(this, monitoringService, profilerService)
-
-            // Paper plugins don't support getCommand() — register via Bukkit CommandMap
-            val mgCommand = object : org.bukkit.command.Command(
-                "mg", "mineGrafana main command", "/mg <subcommand>", listOf("minegrafana")
-            ) {
-                override fun execute(sender: org.bukkit.command.CommandSender, label: String, args: Array<out String>): Boolean {
-                    return handler.onCommand(sender, this, label, args)
-                }
-                override fun tabComplete(sender: org.bukkit.command.CommandSender, alias: String, args: Array<out String>): MutableList<String> {
-                    return handler.onTabComplete(sender, this, alias, args).toMutableList()
-                }
+        val mgCommand = object : org.bukkit.command.Command(
+            "mg", "mineGrafana main command", "/mg <subcommand>", listOf("minegrafana")
+        ) {
+            override fun execute(sender: org.bukkit.command.CommandSender, label: String, args: Array<out String>): Boolean {
+                return handler.onCommand(sender, this, label, args)
             }
-            server.commandMap.register("minegrafana", mgCommand)
-            logger.info("Command /mg registered.")
+            override fun tabComplete(sender: org.bukkit.command.CommandSender, alias: String, args: Array<out String>): MutableList<String> {
+                return handler.onTabComplete(sender, this, alias, args).toMutableList()
+            }
         }
+        server.commandMap.register("minegrafana", mgCommand)
+        logger.info("Command /mg registered.")
     }
 }
