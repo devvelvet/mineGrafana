@@ -205,22 +205,6 @@ velocity_memory_used_mb / max_mb / free_percent
 
 ## Multi-Server Setup
 
-```
-┌──────────┐  ┌──────────┐  ┌──────────┐
-│ Paper :9100│  │ Paper :9101│  │Velocity:9200│
-└─────┬──────┘  └─────┬──────┘  └──────┬───────┘
-      │               │               │
-      └───────┬───────┘───────────────┘
-              │
-       ┌──────▼──────┐
-       │  Prometheus  │
-       └──────┬──────┘
-              │
-       ┌──────▼──────┐
-       │   Grafana    │
-       └─────────────┘
-```
-
 Each server runs its own metrics endpoint on a unique port. Prometheus scrapes all endpoints. Grafana visualizes everything with the `server` label to distinguish instances.
 
 ## Building from Source
