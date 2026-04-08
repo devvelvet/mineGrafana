@@ -26,6 +26,11 @@ class MineGrafanaPaper : JavaPlugin() {
     private val threadProfiler = ThreadProfiler()
     private val tickDistribution = TickDistribution()
 
+    // Cached on main thread, read by Prometheus scrape thread
+    @Volatile private var cachedWorldStats: List<WorldSnapshot> = emptyList()
+    @Volatile private var cachedEntityTypes: Map<Pair<String, String>, Int> = emptyMap()
+    @Volatile private var cachedPlayerPings: Map<String, Int> = emptyMap()
+
     override fun onEnable() {
         if (!loadConfiguration()) return
         if (!startSpringBoot()) return
@@ -95,19 +100,23 @@ class MineGrafanaPaper : JavaPlugin() {
             // Get MeterBinder and wire providers
             val meterBinder = springBridge!!.getBean(MinecraftMeterBinder::class.java)
             if (meterBinder != null) {
+                // Providers read from cached data only (thread-safe, no Bukkit API calls)
                 meterBinder.setProviders(
                     pluginCpu = { threadProfiler.getPluginCpuPercent() },
                     threadSamples = { threadProfiler.getThreadSamples() },
                     hotClasses = { threadProfiler.getAllHotClasses() },
                     tickDist = { longArrayOf(tickDistribution.under5ms.get(), tickDistribution.under10ms.get(), tickDistribution.under25ms.get(), tickDistribution.under50ms.get(), tickDistribution.over50ms.get()) },
-                    worldStats = { collectWorldStats() },
-                    entityTypes = { collectEntityTypes() },
-                    playerPings = { Bukkit.getOnlinePlayers().associate { it.name to it.ping } }
+                    worldStats = { cachedWorldStats },
+                    entityTypes = { cachedEntityTypes },
+                    playerPings = { cachedPlayerPings }
                 )
 
-                // Periodic cache update on main thread
+                // Periodic cache update on MAIN thread (Bukkit API requires it)
                 val intervalTicks = pluginConfig.features.monitoring.collectionIntervalSeconds * 20L
                 server.scheduler.runTaskTimer(this@MineGrafanaPaper, Runnable {
+                    cachedWorldStats = collectWorldStats()
+                    cachedEntityTypes = collectEntityTypes()
+                    cachedPlayerPings = Bukkit.getOnlinePlayers().associate { it.name to it.ping }
                     updateCache(meterBinder)
                     meterBinder.registerDynamicGauges()
                 }, 40L, intervalTicks)
